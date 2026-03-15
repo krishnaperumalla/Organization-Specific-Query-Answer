@@ -129,7 +129,7 @@ def get_embeddings(texts: List[str]):
         embeddings = []
         for text in texts:
             result = genai.embed_content(
-                model="models/text-embedding-004",
+                model="models/embedding-001",
                 content=text,
                 task_type="retrieval_document"
             )
@@ -141,8 +141,12 @@ def get_embeddings(texts: List[str]):
 
 def query_pinecone(question: str, session_id: str, top_k: int = RETRIEVAL_K) -> List[Dict[str, Any]]:
     try:
-        query_embedding = get_embeddings([question])[0]
-        
+        result = genai.embed_content(
+            model="models/embedding-001",
+            content=question,
+            task_type="retrieval_query"
+        )
+        query_embedding = result['embedding']
         results = index.query(
             vector=query_embedding.tolist(),
             top_k=top_k,
@@ -376,7 +380,7 @@ def delete_document(doc_id):
 # Load models once lazily on first request
 @app.before_request
 def load_models_once():
-    global embeddings_model, llm, pc, index
+    global embeddings_model
     if embeddings_model is None:
         initialize_models()
 
