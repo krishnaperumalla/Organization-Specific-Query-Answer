@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuMind - Document Intelligence</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <h1 class="logo-text">DocuMind</h1>
+            </div>
+            <p class="tagline">AI-Powered Document Intelligence System</p>
+        </header>
+
+        <div class="status-container">
+            <div class="status-card" id="statusCard">
+                <div class="pulse-dot"></div>
+                <span id="statusText">Checking system status...</span>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="card upload-card">
+                <div class="card-header">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h2>Upload Document</h2>
+                </div>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="fileInput" accept=".pdf,.docx,.txt" hidden>
+                    <div class="upload-content">
+                        <div class="upload-icon-wrapper">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <p class="upload-text">Click to upload or drag and drop</p>
+                        <p class="upload-hint">PDF, DOCX, TXT (Max 50MB)</p>
+                    </div>
+                </div>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="upload-message" id="uploadMessage"></div>
+            </div>
+
+            <div class="card documents-card">
+                <div class="card-header">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                        <polyline points="13 2 13 9 20 9"></polyline>
+                    </svg>
+                    <h2>Your Documents</h2>
+                </div>
+                <div class="documents-list" id="documentsList">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+                            <rect x="9" y="3" width="6" height="4" rx="2"></rect>
+                        </svg>
+                        <p>No documents uploaded yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card query-card">
+                <div class="card-header">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <h2>Ask Questions</h2>
+                </div>
+                <select id="documentSelect" class="doc-select">
+                    <option value="">Select a document...</option>
+                </select>
+                <div class="query-container">
+                    <textarea 
+                        id="queryInput" 
+                        class="query-textarea" 
+                        placeholder="What would you like to know about this document?"
+                        rows="4"
+                    ></textarea>
+                    <button id="queryButton" class="query-btn" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <span>Ask Question</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card answer-card" id="answerCard" style="display: none;">
+                <div class="card-header">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <h2>Answer</h2>
+                </div>
+                <div class="answer-content" id="answerContent"></div>
+                <div class="sources-section" id="sourcesSection" style="display: none;"></div>
+                <div class="meta-info" id="metaInfo"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader"></div>
+        <p class="loading-text">Processing...</p>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
