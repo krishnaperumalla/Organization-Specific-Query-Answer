@@ -22,7 +22,7 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt'}
 MAX_FILE_SIZE = 50 * 1024 * 1024
 
-MODEL_PATH = "./my_bert_model"
+MODEL_PATH = "sentence-transformers/all-MiniLM-L6-v2"
 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
@@ -374,10 +374,12 @@ def delete_document(doc_id):
     except Exception as e:
         logger.error(f"❌ Error deleting document: {e}")
         return jsonify({'error': str(e)}), 500
+# Load models once lazily on first request
+@app.before_request
+def load_models_once():
+    global embeddings_model, llm, pc, index
+    if embeddings_model is None:
+        initialize_models()
 
 if __name__ == '__main__':
-    logger.info("🚀 Initializing OrgQuery System...")
-    initialize_models()
-    logger.info("✅ System ready!")
-    
     app.run(host='0.0.0.0', port=5000, debug=True)
