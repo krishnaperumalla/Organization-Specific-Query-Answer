@@ -7,7 +7,7 @@ from typing import List, Dict, Any
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-from sentence_transformers import SentenceTransformer
+import google.generativeai as genai
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -22,7 +22,6 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt'}
 MAX_FILE_SIZE = 50 * 1024 * 1024
 
-MODEL_PATH = "sentence-transformers/all-MiniLM-L6-v2"
 
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
@@ -55,13 +54,14 @@ def initialize_models():
     global embeddings_model, llm, pc, index
     
     try:
-        logger.info(f"Loading Sentence-BERT embeddings model from {MODEL_PATH}...")
-        embeddings_model = SentenceTransformer(MODEL_PATH)
-        logger.info("✅ Embeddings model loaded successfully")
+        logger.info("Configuring Google Generative AI...")
+        genai.configure(api_key=GOOGLE_API_KEY)
+        embeddings_model = True  # flag to show it's ready
+        logger.info("✅ Google embeddings ready")
         
         logger.info("Initializing Google Gemini LLM...")
         llm = ChatGoogleGenerativeAI(
-            model="gemini-3-flash-preview",
+            model="gemini-1.5-flash",
             google_api_key=GOOGLE_API_KEY,
             temperature=0.1,
             max_output_tokens=800,
@@ -71,12 +71,10 @@ def initialize_models():
         logger.info("Initializing Pinecone...")
         pc = Pinecone(api_key=PINECONE_API_KEY)
         
-        embedding_dimension = embeddings_model.get_sentence_embedding_dimension()
-        
         if PINECONE_INDEX_NAME not in pc.list_indexes().names():
             pc.create_index(
                 name=PINECONE_INDEX_NAME,
-                dimension=embedding_dimension,
+                dimension=768,
                 metric="cosine",
                 spec=ServerlessSpec(
                     cloud="aws",
@@ -128,13 +126,14 @@ def split_documents(documents: List[Document]) -> List[Document]:
 
 def get_embeddings(texts: List[str]):
     try:
-        embeddings = embeddings_model.encode(
-            texts, 
-            convert_to_numpy=True,
-            batch_size=32,
-            show_progress_bar=False,
-            normalize_embeddings=True
-        )
+        embeddings = []
+        for text in texts:
+            result = genai.embed_content(
+                model="models/text-embedding-004",
+                content=text,
+                task_type="retrieval_document"
+            )
+            embeddings.append(result['embedding'])
         return embeddings
     except Exception as e:
         logger.error(f"❌ Error generating embeddings: {e}")
