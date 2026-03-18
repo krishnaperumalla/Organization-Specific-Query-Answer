@@ -38,6 +38,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 CORS(app)
 
+
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 embeddings_model = None
@@ -79,7 +81,7 @@ def initialize_models():
 
     pinecone_index = pc.Index(PINECONE_INDEX_NAME)
     logger.info("Pinecone initialized")
-
+initialize_models()
 
 def load_document(file_path: str) -> List[Document]:
     try:
@@ -245,7 +247,7 @@ def upload_document():
         if not chunks:
             return jsonify({'error': 'No content extracted from document'}), 500
 
-        session_id = str(uuid.uuid4())[:8]
+        session_id = str(uuid.uuid4())
         doc_id = session_id
 
         chunk_texts = [chunk.page_content for chunk in chunks]
@@ -353,7 +355,5 @@ def delete_document(doc_id):
         logger.error(f"Error deleting document: {e}")
         return jsonify({'error': str(e)}), 500
 
-
 if __name__ == '__main__':
-    initialize_models()
     app.run(host='0.0.0.0', port=5000, debug=True)
