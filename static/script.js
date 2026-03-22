@@ -12,21 +12,52 @@ const queryButton = document.getElementById('queryButton');
 const answerCard = document.getElementById('answerCard');
 const answerContent = document.getElementById('answerContent');
 const sourcesSection = document.getElementById('sourcesSection');
-const sourcesList = document.getElementById('sourcesList');
 const metaInfo = document.getElementById('metaInfo');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const statusCard = document.getElementById('statusCard');
 const statusText = document.getElementById('statusText');
+const profileBtn = document.getElementById('profileBtn');
+const profileMenu = document.getElementById('profileMenu');
+const logoutBtn = document.getElementById('logoutBtn');
+const userEmail = document.getElementById('userEmail');
+const profileMenuEmail = document.getElementById('profileMenuEmail');
 
 let currentDocuments = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Check if user is logged in
+    checkAuthStatus();
+    
+    // Load user info
+    getUserInfo();
+    
+    // Initialize app
     checkHealth();
     loadDocuments();
     setupEventListeners();
 });
 
+function checkAuthStatus() {
+    const email = localStorage.getItem('user_email');
+    if (!email) {
+        // User is not logged in, redirect to login page
+        window.location.href = '/login';
+    }
+}
+
+function getUserInfo() {
+    const email = localStorage.getItem('user_email');
+    if (email) {
+        userEmail.textContent = email;
+        profileMenuEmail.textContent = email;
+    } else {
+        userEmail.textContent = 'Not logged in';
+        profileMenuEmail.textContent = 'Not logged in';
+    }
+}
+
 function setupEventListeners() {
+    // File upload events
     uploadZone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFileSelect);
     
@@ -48,6 +79,7 @@ function setupEventListeners() {
         }
     });
     
+    // Query events
     documentSelect.addEventListener('change', () => {
         queryButton.disabled = !documentSelect.value;
     });
@@ -60,6 +92,50 @@ function setupEventListeners() {
             handleQuery();
         }
     });
+    
+    // Profile dropdown events
+    profileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        profileBtn.parentElement.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!profileBtn.parentElement.contains(e.target)) {
+            profileBtn.parentElement.classList.remove('active');
+        }
+    });
+
+    // Logout event
+    logoutBtn.addEventListener('click', handleLogout);
+}
+
+async function handleLogout() {
+    try {
+        const response = await fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            // Clear localStorage
+            localStorage.removeItem('user_email');
+            
+            // Redirect to login page
+            window.location.href = '/login';
+        } else {
+            console.error('Logout failed');
+            // Still clear localStorage and redirect
+            localStorage.removeItem('user_email');
+            window.location.href = '/login';
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Clear localStorage and redirect anyway
+        localStorage.removeItem('user_email');
+        window.location.href = '/login';
+    }
 }
 
 async function checkHealth() {

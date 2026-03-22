@@ -3,9 +3,10 @@ import logging
 import time
 import uuid
 from typing import List, Dict, Any
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import google.generativeai as genai
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
@@ -13,7 +14,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 from langchain.prompts import PromptTemplate
 from pinecone import Pinecone, ServerlessSpec
+from pymongo import MongoClient
 from dotenv import load_dotenv
+from functools import wraps
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -32,10 +35,12 @@ PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "orgquery-index")
 PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT", "us-east-1")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+MONGODB_URI = os.getenv("MONGODB_URI")
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your-secret-key-change-this")
 CORS(app)
     
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -44,6 +49,9 @@ embeddings_model = None
 llm = None
 pc = None
 pinecone_index = None
+mongo_client = None
+db = None
+users_collection = None
 document_metadata = {}
 
 
@@ -52,7 +60,10 @@ def allowed_file(filename):
 
 
 def initialize_models():
-    global embeddings_model, llm, pc, pinecone_index
+    global embeddings_model, llm, pc, pinecone_index, mongo_client, db, users_collection
+
+    if pinecone_index is not None and mongo_client is not None:
+        return
 
     genai.configure(api_key=GOOGLE_API_KEY)
     embeddings_model = True
@@ -79,6 +90,29 @@ def initialize_models():
 
     pinecone_index = pc.Index(PINECONE_INDEX_NAME)
     logger.info("Pinecone initialized")
+
+    if MONGODB_URI and mongo_client is None:
+        mongo_client = MongoClient(
+            MONGODB_URI,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=10000,
+            socketTimeoutMS=20000,
+            maxPoolSize=10,
+            minPoolSize=1
+        )
+        db = mongo_client['rag_system']
+        users_collection = db['users']
+        mongo_client.admin.command('ping')
+        logger.info("MongoDB connected")
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'error': 'Unauthorized'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 def load_document(file_path: str) -> List[Document]:
@@ -219,7 +253,68 @@ def generate_answer(question: str, relevant_docs: List[Dict[str, Any]]) -> str:
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    if 'user_id' in session:
+        return render_template('index.html')
+    return render_template('login.html')
+
+
+@app.route('/login', methods=['GET'])
+def login_page():
+    return render_template('login.html')
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    
+    email = data.get('email')
+    password = data.get('password')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
+    
+    if users_collection.find_one({'email': email}):
+        return jsonify({'error': 'Email already registered'}), 400
+    
+    hashed_password = generate_password_hash(password)
+    
+    user_id = users_collection.insert_one({
+        'email': email,
+        'password': hashed_password,
+        'created_at': time.time()
+    }).inserted_id
+    
+    session['user_id'] = str(user_id)
+    session['email'] = email
+    
+    return jsonify({'success': True, 'message': 'Registration successful'})
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    
+    email = data.get('email')
+    password = data.get('password')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
+    
+    user = users_collection.find_one({'email': email})
+    
+    if not user or not check_password_hash(user['password'], password):
+        return jsonify({'error': 'Invalid email or password'}), 401
+    
+    session['user_id'] = str(user['_id'])
+    session['email'] = email
+    
+    return jsonify({'success': True, 'message': 'Login successful'})
+
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({'success': True, 'message': 'Logged out successfully'})
 
 
 @app.route('/health', methods=['GET'])
@@ -229,15 +324,14 @@ def health_check():
         'embeddings_loaded': embeddings_model is not None,
         'llm_loaded': llm is not None,
         'pinecone_connected': pinecone_index is not None,
+        'mongodb_connected': mongo_client is not None,
         'documents_loaded': len(document_metadata)
     })
 
 
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload_document():
-    global pinecone_index
-    if pinecone_index is None:
-        initialize_models()
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
 
@@ -293,7 +387,8 @@ def upload_document():
             'filename': filename,
             'session_id': session_id,
             'chunks_count': len(chunks),
-            'upload_time': time.time()
+            'upload_time': time.time(),
+            'user_id': session['user_id']
         }
 
         os.remove(file_path)
@@ -311,6 +406,7 @@ def upload_document():
 
 
 @app.route('/query', methods=['POST'])
+@login_required
 def query_document():
     data = request.get_json()
 
@@ -347,6 +443,7 @@ def query_document():
 
 
 @app.route('/documents', methods=['GET'])
+@login_required
 def list_documents():
     return jsonify({
         'documents': [
@@ -361,6 +458,7 @@ def list_documents():
 
 
 @app.route('/delete/<doc_id>', methods=['DELETE'])
+@login_required
 def delete_document(doc_id):
     try:
         if doc_id in document_metadata:
