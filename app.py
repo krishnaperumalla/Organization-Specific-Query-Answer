@@ -37,7 +37,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 CORS(app)
-
+    
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 embeddings_model = None
@@ -219,6 +219,9 @@ def health_check():
 
 @app.route('/upload', methods=['POST'])
 def upload_document():
+    global pinecone_index
+    if pinecone_index is None:
+        initialize_models()
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
 
