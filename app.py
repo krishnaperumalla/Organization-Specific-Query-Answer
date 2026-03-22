@@ -491,7 +491,15 @@ def list_documents():
             for doc_id, metadata in document_metadata.items()
         ]
     })
-
+@app.route('/debug-env', methods=['GET'])
+def debug_env():
+    return jsonify({
+        'MONGODB_URI_set': MONGODB_URI is not None and len(MONGODB_URI) > 0,
+        'MONGODB_URI_preview': MONGODB_URI[:50] + '...' if MONGODB_URI and len(MONGODB_URI) > 50 else MONGODB_URI,
+        'mongo_client': mongo_client is not None,
+        'users_collection': users_collection is not None,
+        'SECRET_KEY_set': bool(os.getenv("SECRET_KEY"))
+    })
 
 @app.route('/delete/<doc_id>', methods=['DELETE'])
 @login_required
