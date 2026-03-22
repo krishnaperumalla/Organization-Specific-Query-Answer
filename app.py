@@ -58,7 +58,6 @@ document_metadata = {}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 def initialize_models():
     global embeddings_model, llm, pc, pinecone_index, mongo_client, db, users_collection
 
@@ -92,18 +91,27 @@ def initialize_models():
     logger.info("Pinecone initialized")
 
     if MONGODB_URI and mongo_client is None:
-        mongo_client = MongoClient(
-            MONGODB_URI,
-            serverSelectionTimeoutMS=5000,
-            connectTimeoutMS=10000,
-            socketTimeoutMS=20000,
-            maxPoolSize=10,
-            minPoolSize=1
-        )
-        db = mongo_client['rag_system']
-        users_collection = db['users']
-        mongo_client.admin.command('ping')
-        logger.info("MongoDB connected")
+        try:
+            logger.info(f"Attempting MongoDB connection...")
+            mongo_client = MongoClient(
+                MONGODB_URI,
+                serverSelectionTimeoutMS=5000,
+                connectTimeoutMS=10000,
+                socketTimeoutMS=20000,
+                maxPoolSize=10,
+                minPoolSize=1
+            )
+            db = mongo_client['rag_system']
+            users_collection = db['users']
+            mongo_client.admin.command('ping')
+            logger.info("MongoDB connected successfully")
+        except Exception as e:
+            logger.error(f"MongoDB connection failed: {e}")
+            mongo_client = None
+            db = None
+            users_collection = None
+    else:
+        logger.warning(f"MONGODB_URI not set or already connected. MONGODB_URI exists: {bool(MONGODB_URI)}")
 
 
 def login_required(f):
@@ -262,9 +270,19 @@ def home():
 def login_page():
     return render_template('login.html')
 
-
 @app.route('/register', methods=['POST'])
 def register():
+    global users_collection
+    
+    if users_collection is None:
+        try:
+            initialize_models()
+        except Exception as e:
+            logger.error(f"Failed to initialize models: {e}")
+    
+    if users_collection is None:
+        return jsonify({'error': 'Database not available. Please check server logs.'}), 503
+    
     data = request.get_json()
     
     email = data.get('email')
@@ -273,25 +291,40 @@ def register():
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
     
-    if users_collection.find_one({'email': email}):
-        return jsonify({'error': 'Email already registered'}), 400
-    
-    hashed_password = generate_password_hash(password)
-    
-    user_id = users_collection.insert_one({
-        'email': email,
-        'password': hashed_password,
-        'created_at': time.time()
-    }).inserted_id
-    
-    session['user_id'] = str(user_id)
-    session['email'] = email
-    
-    return jsonify({'success': True, 'message': 'Registration successful'})
+    try:
+        if users_collection.find_one({'email': email}):
+            return jsonify({'error': 'Email already registered'}), 400
+        
+        hashed_password = generate_password_hash(password)
+        
+        user_id = users_collection.insert_one({
+            'email': email,
+            'password': hashed_password,
+            'created_at': time.time()
+        }).inserted_id
+        
+        session['user_id'] = str(user_id)
+        session['email'] = email
+        
+        return jsonify({'success': True, 'message': 'Registration successful'})
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/login', methods=['POST'])
 def login():
+    global users_collection
+    
+    if users_collection is None:
+        try:
+            initialize_models()
+        except Exception as e:
+            logger.error(f"Failed to initialize models: {e}")
+    
+    if users_collection is None:
+        return jsonify({'error': 'Database not available. Please check server logs.'}), 503
+    
     data = request.get_json()
     
     email = data.get('email')
@@ -300,16 +333,19 @@ def login():
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
     
-    user = users_collection.find_one({'email': email})
-    
-    if not user or not check_password_hash(user['password'], password):
-        return jsonify({'error': 'Invalid email or password'}), 401
-    
-    session['user_id'] = str(user['_id'])
-    session['email'] = email
-    
-    return jsonify({'success': True, 'message': 'Login successful'})
-
+    try:
+        user = users_collection.find_one({'email': email})
+        
+        if not user or not check_password_hash(user['password'], password):
+            return jsonify({'error': 'Invalid email or password'}), 401
+        
+        session['user_id'] = str(user['_id'])
+        session['email'] = email
+        
+        return jsonify({'success': True, 'message': 'Login successful'})
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/logout', methods=['POST'])
 def logout():
