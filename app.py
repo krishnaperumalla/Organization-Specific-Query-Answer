@@ -23,8 +23,8 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt'}
 MAX_FILE_SIZE = 50 * 1024 * 1024
 
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
+CHUNK_SIZE = 1000
+CHUNK_OVERLAP = 100
 MAX_RELEVANT_CHUNKS = 4
 RETRIEVAL_K = 4
 
@@ -112,13 +112,29 @@ def split_documents(documents: List[Document]) -> List[Document]:
 
 def get_embeddings(texts: List[str]):
     embeddings = []
-    for text in texts:
-        response = genai.embed_content(
-            model="models/gemini-embedding-001",   # YES — go back to this
-            content=text,
-            task_type="retrieval_document"
-        )
-        embeddings.append(response["embedding"])
+    batch_size = 100
+    
+    logger.info(f"Generating embeddings for {len(texts)} texts in batches of {batch_size}")
+    
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i:i + batch_size]
+        try:
+            response = genai.embed_content(
+                model="models/gemini-embedding-001",
+                content=batch,
+                task_type="retrieval_document"
+            )
+            embeddings.extend(response["embedding"])
+        except Exception as e:
+            logger.error(f"Error embedding batch {i//batch_size}: {e}")
+            for text in batch:
+                resp = genai.embed_content(
+                    model="models/gemini-embedding-001",
+                    content=text,
+                    task_type="retrieval_document"
+                )
+                embeddings.append(resp["embedding"])
+    
     return embeddings
 
 
@@ -247,6 +263,8 @@ def upload_document():
 
         if not chunks:
             return jsonify({'error': 'No content extracted from document'}), 500
+
+        logger.info(f"Processing {len(chunks)} chunks for {filename}")
 
         session_id = str(uuid.uuid4())[:8]
         doc_id = session_id
