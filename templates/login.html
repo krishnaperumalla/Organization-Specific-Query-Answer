@@ -3,269 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - RAG System</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .toggle-form {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-        }
-
-        .toggle-form a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .toggle-form a:hover {
-            text-decoration: underline;
-        }
-
-        .error {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .success {
-            background: #efe;
-            color: #3c3;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-    </style>
+    <title>DocuMind - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/login_style.css">
 </head>
 <body>
-    <div class="container">
-        <h2 id="formTitle">Login to RAG System</h2>
-        
-        <div class="error" id="errorMsg"></div>
-        <div class="success" id="successMsg"></div>
-        
-        <form id="authForm">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" required autocomplete="email">
+    <div class="left-section">
+        <div class="animation-container">
+            <div class="floating-docs">
+                <div class="doc-icon"></div>
+                <div class="doc-icon"></div>
+                <div class="doc-icon"></div>
+                <div class="doc-icon"></div>
+                <div class="doc-icon"></div>
             </div>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" required autocomplete="current-password">
+
+            <div class="data-stream"></div>
+            <div class="data-stream"></div>
+            <div class="data-stream"></div>
+            <div class="data-stream"></div>
+
+            <div class="orbit-container">
+                <div class="orbit">
+                    <div class="particle"></div>
+                </div>
+                <div class="orbit">
+                    <div class="particle"></div>
+                </div>
+                <div class="orbit">
+                    <div class="particle"></div>
+                </div>
             </div>
-            
-            <button type="submit" id="submitBtn">Login</button>
-        </form>
-        
-        <div class="toggle-form">
-            <span>Don't have an account? <a id="toggleLink">Register</a></span>
+
+            <div class="ai-core">
+                <div class="neural-network">
+                    <div class="node"></div>
+                    <div class="node"></div>
+                    <div class="node"></div>
+                    <div class="node"></div>
+                    <div class="node"></div>
+                    <div class="node"></div>
+                    <div class="node"></div>
+                    <div class="node"></div>
+                    <div class="node"></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        let isLogin = true;
-        const form = document.getElementById('authForm');
-        const formTitle = document.getElementById('formTitle');
-        const submitBtn = document.getElementById('submitBtn');
-        const toggleLink = document.getElementById('toggleLink');
-        const errorMsg = document.getElementById('errorMsg');
-        const successMsg = document.getElementById('successMsg');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-
-        // Toggle between login and register
-        toggleLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            isLogin = !isLogin;
+    <div class="right-section">
+        <div class="login-container">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <h1>DOCUMIND</h1>
+                <p class="subtitle">AI-Powered Document Intelligence</p>
+            </div>
             
-            if (isLogin) {
-                formTitle.textContent = 'Login to RAG System';
-                submitBtn.textContent = 'Login';
-                document.querySelector('.toggle-form').innerHTML = 'Don\'t have an account? <a id="toggleLink">Register</a>';
-                emailInput.setAttribute('autocomplete', 'email');
-                passwordInput.setAttribute('autocomplete', 'current-password');
-            } else {
-                formTitle.textContent = 'Register for RAG System';
-                submitBtn.textContent = 'Register';
-                document.querySelector('.toggle-form').innerHTML = 'Already have an account? <a id="toggleLink">Login</a>';
-                emailInput.setAttribute('autocomplete', 'email');
-                passwordInput.setAttribute('autocomplete', 'new-password');
-            }
+            <h2 id="formTitle">Welcome Back</h2>
             
-            // Re-attach event listener to new toggle link
-            document.getElementById('toggleLink').addEventListener('click', arguments.callee);
+            <div class="error" id="errorMsg"></div>
+            <div class="success" id="successMsg"></div>
             
-            // Clear messages
-            errorMsg.style.display = 'none';
-            successMsg.style.display = 'none';
-            
-            // Clear form
-            form.reset();
-        });
-
-        // Handle form submission
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
-            
-            // Validate inputs
-            if (!email || !password) {
-                showError('Please fill in all fields');
-                return;
-            }
-            
-            // Clear previous messages
-            errorMsg.style.display = 'none';
-            successMsg.style.display = 'none';
-            
-            // Disable submit button
-            submitBtn.disabled = true;
-            submitBtn.textContent = isLogin ? 'Logging in...' : 'Registering...';
-            
-            try {
-                const endpoint = isLogin ? '/login' : '/register';
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, password })
-                });
+            <form id="authForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+                </div>
                 
-                const data = await response.json();
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
                 
-                if (response.ok) {
-                    // Store user email in localStorage
-                    localStorage.setItem('user_email', email);
-                    
-                    // Show success message
-                    showSuccess(data.message || (isLogin ? 'Login successful!' : 'Registration successful!'));
-                    
-                    // Redirect to main page
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1000);
-                } else {
-                    showError(data.error || 'An error occurred. Please try again.');
-                }
-            } catch (error) {
-                console.error('Auth error:', error);
-                showError('Network error. Please check your connection and try again.');
-            } finally {
-                // Re-enable submit button
-                submitBtn.disabled = false;
-                submitBtn.textContent = isLogin ? 'Login' : 'Register';
-            }
-        });
+                <button type="submit" id="submitBtn">Sign In</button>
+            </form>
+            
+            <div class="toggle-form">
+                <span>Don't have an account? <a id="toggleLink">Create Account</a></span>
+            </div>
+        </div>
+    </div>
 
-        function showError(message) {
-            errorMsg.textContent = message;
-            errorMsg.style.display = 'block';
-        }
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader">
+            <div class="document-loader">
+                <div class="doc-page"></div>
+                <div class="doc-page"></div>
+                <div class="doc-page"></div>
+            </div>
+            <div class="ai-brain">
+                <div class="brain-core"></div>
+                <div class="brain-wave"></div>
+                <div class="brain-wave"></div>
+                <div class="brain-wave"></div>
+            </div>
+        </div>
+        <p class="loading-text">Logging In</p>
+        <p class="loading-subtext">Securing your session...</p>
+    </div>
 
-        function showSuccess(message) {
-            successMsg.textContent = message;
-            successMsg.style.display = 'block';
-        }
-
-        // Check if user is already logged in
-        window.addEventListener('DOMContentLoaded', () => {
-            const userEmail = localStorage.getItem('user_email');
-            if (userEmail) {
-                // User is already logged in, redirect to main page
-                window.location.href = '/';
-            }
-        });
-    </script>
+    
+    <script src="/static/script_login.js"></script>
+    
 </body>
 </html>
